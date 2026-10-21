@@ -1,0 +1,35 @@
+name: Build Windows exe
+
+on:
+  workflow_dispatch:            # 手动触发：在 Actions 页点 Run workflow
+  push:
+    paths:
+      - 'pdf_tool.py'           # 源码更新时也会自动构建
+
+jobs:
+  build:
+    runs-on: windows-latest     # Windows 云端构建机
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies (pymupdf + pyinstaller)
+        run: python -m pip install --upgrade pymupdf pyinstaller
+
+      - name: Build executable
+        run: python -m PyInstaller --onefile --name pdf_tool --collect-all pymupdf --clean -y pdf_tool.py
+
+      - name: Smoke test (verify exe runs)
+        run: .\dist\pdf_tool.exe --help
+
+      - name: Upload exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf_tool-windows
+          path: dist/pdf_tool.exe
+          retention-days: 90     # 产物保留 90 天，请及时另存
